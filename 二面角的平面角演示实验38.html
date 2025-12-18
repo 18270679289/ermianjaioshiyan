@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二面角平面角：形状与定义推广</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; background-color: #f0f2f5; }
+        #container { width: 100vw; height: 100vh; }
+        
+        #ui-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            width: 360px; /* 稍微加宽以容纳按钮 */
+            border-left: 5px solid #34495e;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        h2 { margin: 0 0 15px 0; color: #2c3e50; font-size: 18px; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px;}
+        
+        .control-group { margin-bottom: 18px; }
+        .label-row { display: flex; justify-content: space-between; font-size: 14px; color: #555; margin-bottom: 5px; font-weight: 600;}
+        
+        input[type=range] { width: 100%; cursor: pointer; }
+
+        /* 快捷按钮样式 */
+        .quick-btn-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+        .quick-btn {
+            background: #eef2f7;
+            border: 1px solid #d1d9e6;
+            border-radius: 4px;
+            padding: 4px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #555;
+            transition: all 0.2s;
+        }
+        .quick-btn:hover { background: #dfe6f0; color: #333; border-color: #bdc3c7;}
+        .quick-btn.active { background: #34495e; color: #fff; border-color: #2c3e50;}
+
+        /* 下拉菜单样式 */
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+            margin-bottom: 15px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .result-box {
+            background: #f1f3f5;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ced4da;
+            margin-top: 15px;
+        }
+        .result-val { font-size: 32px; font-weight: 800; color: #333; }
+        .result-label { font-size: 12px; color: #777; }
+
+        .dot-red { display:inline-block; width:10px; height:10px; background:#e74c3c; border-radius:50%; margin-right:5px;}
+        .dot-blue { display:inline-block; width:10px; height:10px; background:#3498db; border-radius:50%; margin-right:5px;}
+        .dot-yellow { display:inline-block; width:10px; height:10px; background:#f1c40f; border-radius:50%; margin-right:5px;}
+        
+        /* 刻度线辅助 */
+        datalist {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 10px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+
+<div id="container"></div>
+
+<div id="ui-panel">
+    <h2>二面角探究 (变式教学)</h2>
+
+    <div class="control-group">
+        <label class="label-row">选择卡纸形状 (推广验证)</label>
+        <select id="shapeSelect">
+            <option value="rect">矩形 (标准)</option>
+            <option value="circle">圆形 / 半圆</option>
+            <option value="rhombus">菱形</option>
+            <option value="cloud">不规则图形</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <div class="label-row">
+            <span>1. 折叠卡纸 (二面角)</span>
+            <span id="txt-fold" style="color:#2c3e50; font-weight:bold;">90°</span>
+        </div>
+        <input type="range" id="inp-fold" min="0" max="180" value="90" list="angle-markers">
+        <datalist id="angle-markers">
+            <option value="0" label="0"></option>
+            <option value="90" label="90"></option>
+            <option value="180" label="180"></option>
+        </datalist>
+        
+        <div class="quick-btn-group">
+            <button class="quick-btn" onclick="setAngle(0)">0° (重合)</button>
+            <button class="quick-btn active" onclick="setAngle(90)">90° (直立)</button>
+            <button class="quick-btn" onclick="setAngle(180)">180° (铺平)</button>
+        </div>
+    </div>
+
+    <hr style="border:0; border-top:1px dashed #ccc; margin: 15px 0;">
+
+    <div class="control-group">
+        <div class="label-row">
+            <span><span class="dot-yellow"></span>2. 移动棱上顶点位置</span>
+            <span id="txt-pos">居中</span>
+        </div>
+        <input type="range" id="inp-pos" min="-8" max="8" value="0" step="0.1">
+    </div>
+
+    <div class="control-group">
+        <div class="label-row">
+            <span><span class="dot-red"></span>3. 调整红线方向</span>
+        </div>
+        <input type="range" id="inp-red" min="-60" max="60" value="30">
+    </div>
+
+    <div class="control-group">
+        <div class="label-row">
+            <span><span class="dot-blue"></span>4. 调整蓝线方向</span>
+        </div>
+        <input type="range" id="inp-blue" min="-60" max="60" value="-30">
+    </div>
+
+    <div class="result-box">
+        <div class="result-label">当前测量夹角</div>
+        <div class="result-val" id="txt-angle">--</div>
+        <div class="result-label" style="margin-top:5px; font-size:11px; color:#999;">尝试切换形状，观察角度是否改变？</div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+
+<script>
+    let scene, camera, renderer, controls;
+    let plane1, plane2, hingeGroup;
+    let redCylinder, blueCylinder, vertexSphere;
+    
+    // 全局材质管理，方便切换形状时复用
+    const p1Mat = new THREE.MeshPhongMaterial({ color: 0xbdc3c7, side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+    const p2Mat = new THREE.MeshPhongMaterial({ color: 0xaed6f1, side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+    
+    const LINE_LENGTH = 12;
+    const LINE_THICKNESS = 0.18; 
+
+    function init() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f2f5);
+        scene.fog = new THREE.Fog(0xf0f2f5, 40, 100);
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(25, 30, 30);
+        camera.lookAt(0, 0, 0);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.getElementById('container').appendChild(renderer.domElement);
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        setupLights();
+        
+        // 初始化环境（棱、网格）
+        createStaticEnv();
+        
+        // 初始化动态对象（平面、线、球）
+        createPlanes('rect'); // 默认矩形
+        createLinesAndDot();
+        
+        setupEvents();
+        updateScene();
+        animate();
+    }
+
+    function setupLights() {
+        const amb = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(amb);
+        const dir = new THREE.DirectionalLight(0xffffff, 0.7);
+        dir.position.set(10, 20, 15);
+        dir.castShadow = true;
+        scene.add(dir);
+    }
+
+    function createStaticEnv() {
+        // 棱 (Z轴)
+        const hingeGeo = new THREE.CylinderGeometry(0.2, 0.2, 34, 16);
+        const hingeMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.4 });
+        const hinge = new THREE.Mesh(hingeGeo, hingeMat);
+        hinge.rotation.x = Math.PI / 2; 
+        scene.add(hinge);
+        
+        // 地面网格
+        const grid = new THREE.GridHelper(60, 60, 0xcccccc, 0xe5e5e5);
+        scene.add(grid);
+    }
+
+    // 核心：创建/切换平面形状
+    function createPlanes(type) {
+        // 如果已存在，先移除
+        if(plane1) scene.remove(plane1);
+        if(hingeGroup) scene.remove(hingeGroup);
+
+        let geometry;
+        
+        // 定义几何体生成逻辑
+        switch(type) {
+            case 'rect':
+                geometry = new THREE.PlaneGeometry(16, 16);
+                geometry.translate(8, 0, 0); // 偏移使得边缘在轴上
+                break;
+            case 'circle':
+                // 创建半圆效果
+                geometry = new THREE.CircleGeometry(10, 64, 0, Math.PI); 
+                // Circle默认是在XY平面，且围绕中心。
+                // 我们需要把它转一下，并且移动
+                geometry.rotateZ(Math.PI / 2); // 旋转让直边垂直于X轴
+                geometry.translate(0, 10, 0); // 错开（这里比较trick，不如直接用Shape）
+                // 重新用Shape画半圆更稳
+                const shapeC = new THREE.Shape();
+                shapeC.absarc(0, 0, 10, -Math.PI/2, Math.PI/2, false); // 右半圆
+                shapeC.lineTo(0, -10);
+                geometry = new THREE.ShapeGeometry(shapeC);
+                // 无需额外位移，因为Shape左边就是X=0
+                break;
+            case 'rhombus':
+                // 菱形 (旋转45度的正方形)
+                geometry = new THREE.CircleGeometry(11, 4, Math.PI/4);
+                geometry.translate(9, 0, 0); // 顶点接触轴，或者边接触轴
+                // 为了让边接触轴，重新画Shape
+                const shapeR = new THREE.Shape();
+                shapeR.moveTo(0, 6);
+                shapeR.lineTo(12, 0);
+                shapeR.lineTo(0, -6);
+                shapeR.lineTo(0, 6); // 闭合
+                geometry = new THREE.ShapeGeometry(shapeR);
+                break;
+            case 'cloud':
+                // 不规则图形
+                const shape = new THREE.Shape();
+                shape.moveTo(0, 8);
+                // 贝塞尔曲线画云朵边
+                shape.bezierCurveTo(5, 10, 10, 8, 12, 4);
+                shape.bezierCurveTo(15, 0, 12, -5, 8, -8);
+                shape.bezierCurveTo(4, -10, 0, -8, 0, -8);
+                shape.lineTo(0, 8); // 闭合回轴
+                geometry = new THREE.ShapeGeometry(shape);
+                break;
+        }
+
+        // 创建 Plane 1 (固定)
+        plane1 = new THREE.Mesh(geometry, p1Mat);
+        plane1.rotation.x = -Math.PI / 2;
+        scene.add(plane1);
+
+        // 创建 Plane 2 (放入组中旋转)
+        plane2 = new THREE.Mesh(geometry, p2Mat);
+        plane2.rotation.x = -Math.PI / 2;
+
+        hingeGroup = new THREE.Group();
+        hingeGroup.add(plane2);
+        scene.add(hingeGroup);
+        
+        // 保持当前的折叠角度
+        updateScene();
+    }
+
+    function createLinesAndDot() {
+        const sphereGeo = new THREE.SphereGeometry(0.6, 32, 32);
+        const sphereMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, emissive: 0xf39c12, emissiveIntensity: 0.5 });
+        vertexSphere = new THREE.Mesh(sphereGeo, sphereMat);
+        scene.add(vertexSphere);
+
+        const redGeo = new THREE.CylinderGeometry(LINE_THICKNESS, LINE_THICKNESS, 1, 16);
+        redGeo.translate(0, 0.5, 0); 
+        redGeo.rotateX(Math.PI/2); 
+        const redMat = new THREE.MeshStandardMaterial({ color: 0xe74c3c });
+        redCylinder = new THREE.Mesh(redGeo, redMat);
+        scene.add(redCylinder);
+
+        const blueGeo = new THREE.CylinderGeometry(LINE_THICKNESS, LINE_THICKNESS, 1, 16);
+        blueGeo.translate(0, 0.5, 0);
+        blueGeo.rotateX(Math.PI/2);
+        const blueMat = new THREE.MeshStandardMaterial({ color: 0x3498db });
+        blueCylinder = new THREE.Mesh(blueGeo, blueMat);
+        scene.add(blueCylinder);
+    }
+
+    function setupEvents() {
+        // 滑块事件
+        ['inp-fold', 'inp-pos', 'inp-red', 'inp-blue'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateScene);
+        });
+
+        // 形状选择事件
+        document.getElementById('shapeSelect').addEventListener('change', (e) => {
+            createPlanes(e.target.value);
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    }
+
+    // 暴露给按钮调用的函数
+    window.setAngle = function(val) {
+        document.getElementById('inp-fold').value = val;
+        
+        // 更新按钮样式
+        document.querySelectorAll('.quick-btn').forEach(btn => btn.classList.remove('active'));
+        // 简单匹配文本找到对应按钮高亮
+        if(val===0) document.querySelectorAll('.quick-btn')[0].classList.add('active');
+        if(val===90) document.querySelectorAll('.quick-btn')[1].classList.add('active');
+        if(val===180) document.querySelectorAll('.quick-btn')[2].classList.add('active');
+
+        updateScene();
+    }
+
+    function updateCylinder(mesh, startPoint, endPoint) {
+        mesh.position.copy(startPoint);
+        mesh.lookAt(endPoint);
+        const dist = startPoint.distanceTo(endPoint);
+        mesh.scale.set(1, 1, dist);
+    }
+
+    function updateScene() {
+        const foldDeg = parseFloat(document.getElementById('inp-fold').value);
+        const posVal = parseFloat(document.getElementById('inp-pos').value); 
+        const redDeg = parseFloat(document.getElementById('inp-red').value);
+        const blueDeg = parseFloat(document.getElementById('inp-blue').value);
+
+        document.getElementById('txt-fold').innerText = foldDeg + "°";
+        document.getElementById('txt-pos').innerText = "Z = " + posVal;
+
+        // 1. 设置模型位置
+        if(hingeGroup) hingeGroup.rotation.z = THREE.MathUtils.degToRad(foldDeg);
+        
+        const origin = new THREE.Vector3(0, 0, posVal);
+        if(vertexSphere) vertexSphere.position.copy(origin);
+
+        // 2. 计算红线
+        const redRad = THREE.MathUtils.degToRad(redDeg);
+        const redVec = new THREE.Vector3(LINE_LENGTH * Math.cos(redRad), 0, LINE_LENGTH * Math.sin(redRad));
+        const redEnd = origin.clone().add(redVec);
+        if(redCylinder) updateCylinder(redCylinder, origin, redEnd);
+
+        // 3. 计算蓝线
+        const blueRad = THREE.MathUtils.degToRad(blueDeg);
+        const blueVecLocal = new THREE.Vector3(LINE_LENGTH * Math.cos(blueRad), 0, LINE_LENGTH * Math.sin(blueRad));
+        // 注意：applyEuler依赖于对象当前的rotation，这里我们手动构建旋转
+        const euler = new THREE.Euler(0, 0, THREE.MathUtils.degToRad(foldDeg));
+        const blueVecWorld = blueVecLocal.clone().applyEuler(euler);
+        const blueEnd = origin.clone().add(blueVecWorld);
+        if(blueCylinder) updateCylinder(blueCylinder, origin, blueEnd);
+
+        // 4. 计算夹角
+        const v1 = redVec.normalize();
+        const v2 = blueVecWorld.normalize();
+        let dot = v1.dot(v2);
+        dot = Math.max(-1, Math.min(1, dot));
+        const angle = THREE.MathUtils.radToDeg(Math.acos(dot));
+
+        // 5. 显示
+        const displayElem = document.getElementById('txt-angle');
+        displayElem.innerText = angle.toFixed(1) + "°";
+
+        if (Math.abs(angle - foldDeg) < 1.0) {
+            displayElem.style.color = "#27ae60"; 
+        } else {
+            displayElem.style.color = "#333";
+        }
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    init();
+</script>
+</body>
+</html>
